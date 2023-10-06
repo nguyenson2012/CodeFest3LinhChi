@@ -5,23 +5,25 @@ import sys
 from datetime import datetime
 
 CF_GAME_TITLE = 'Ну, погоди!'
-
-setproctitle.setproctitle(CF_GAME_TITLE)
-
 CF_SERVER_URL = 'http://localhost/'
-
-CF_GAME_ID = 'f0318ff4-6fca-4784-afc0-259e7bd59eda'
-
-CF_PLAYER_ID = 'player1-xxx'
-
-if len(sys.argv) > 1:
-    if sys.argv[1] == '1':
-        PLAYER_ID = 'player1-xxx'
-    elif sys.argv[1] == '2':
-        PLAYER_ID = 'player2-xxx'
+CF_GAME_ID = '2b09317b-6f64-4e51-8683-c92bbc26be6f'
+CF_PLAYER_1_ID = 'player1-xxx'
+CF_PLAYER_2_ID = 'player2-xxx'
 
 def plog(msg):
     print(datetime.now(), CF_GAME_TITLE, msg)
+
+setproctitle.setproctitle(CF_GAME_TITLE)
+
+
+player = input('Please select player (1/2) ')
+if player == '1':
+    player = CF_PLAYER_1_ID
+elif player == '2':
+    player = CF_PLAYER_2_ID
+else:
+    plog('player undefined, exit!')
+    quit()
 
 sio = socketio.AsyncClient()
 
@@ -30,14 +32,14 @@ async def connect():
     plog(f'connection established with {CF_SERVER_URL}')
     await sio.emit('join game', {
         'game_id': CF_GAME_ID,
-        'player_id': CF_PLAYER_ID
+        'player_id': player
     })
 
 @sio.event
 async def my_message(data):
     plog(f'message received with {data}')
     await sio.emit('my response', {'response': 'my response'})
-    return 'Ready', CF_PLAYER_ID
+    return 'Ready', player
 
 # @sio.on
 # async def on_join(msg)
