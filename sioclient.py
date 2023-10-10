@@ -6,7 +6,8 @@ from datetime import datetime
 
 CF_GAME_TITLE = 'Ну, погоди!'
 CF_SERVER_URL = 'http://localhost/'
-CF_GAME_ID = '2b09317b-6f64-4e51-8683-c92bbc26be6f'
+CF_DEMO_KEY = 'codefest-srv  | [2023-10-10T04:04:51.933Z] WRN/  **** YOUR NEW DEMO KEY: 0f4eb988-dcc9-4d5c-97ab-2b9d3df5dd5c ****'
+CF_GAME_ID = 'b96d6fb5-d57f-4360-98b7-6966fc078f3b'
 CF_PLAYER_1_ID = 'player1-xxx'
 CF_PLAYER_2_ID = 'player2-xxx'
 
@@ -30,10 +31,7 @@ sio = socketio.AsyncClient()
 @sio.event
 async def connect():
     plog(f'connection established with {CF_SERVER_URL}')
-    await sio.emit('join game', {
-        'game_id': CF_GAME_ID,
-        'player_id': player
-    })
+    sio.on('join game', on_join_game)
 
 @sio.event
 async def my_message(data):
@@ -41,14 +39,28 @@ async def my_message(data):
     await sio.emit('my response', {'response': 'my response'})
     return 'Ready', player
 
-# @sio.on
-# async def on_join(msg)
-
 @sio.event
 async def disconnect():
     plog('disconnected from server')
 
+
+async def on_receive():
+    try:
+        event = await sio.receive()
+    except Exception as ex:
+        plog(f'Exception {ex} waiting for event')
+    else:
+        plog('received event:', event)
+
+async def on_join_game(resp):
+    plog(resp)
+    # await sio.emit('join game', {
+    #     'game_id': CF_GAME_ID,
+    #     'player_id': player
+    # })
+
 async def main():
+    # task = sio.start_background_task(on_receive)
     await sio.connect(CF_SERVER_URL)
     await sio.wait()
 
