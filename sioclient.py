@@ -10,6 +10,8 @@ CF_DEMO_KEY = 'codefest-srv  | [2023-10-10T04:04:51.933Z] WRN/  **** YOUR NEW DE
 CF_GAME_ID = 'b96d6fb5-d57f-4360-98b7-6966fc078f3b'
 CF_PLAYER_1_ID = 'player1-xxx'
 CF_PLAYER_2_ID = 'player2-xxx'
+CF_EVENT_JOINGAME = 'join game'
+CF_EVENT_POLLING = 'ticktack player'
 
 def plog(msg):
     print(datetime.now(), CF_GAME_TITLE, msg)
@@ -31,7 +33,10 @@ sio = socketio.AsyncClient()
 @sio.event
 async def connect():
     plog(f'connection established with {CF_SERVER_URL}')
-    sio.on('join game', on_join_game)
+    await sio.emit(CF_EVENT_JOINGAME, {
+        'game_id': CF_GAME_ID,
+        'player_id': player
+    })
 
 @sio.event
 async def my_message(data):
@@ -53,14 +58,16 @@ async def on_receive():
         plog('received event:', event)
 
 async def on_join_game(resp):
-    plog(resp)
-    # await sio.emit('join game', {
-    #     'game_id': CF_GAME_ID,
-    #     'player_id': player
-    # })
+    plog(f'on_join_game {resp}')
+
+async def on_polling(resp):
+    plog(f'on_polling {resp}')
+
 
 async def main():
     # task = sio.start_background_task(on_receive)
+    sio.on(CF_EVENT_JOINGAME, on_join_game)
+    sio.on(CF_EVENT_POLLING, on_polling)
     await sio.connect(CF_SERVER_URL)
     await sio.wait()
 
