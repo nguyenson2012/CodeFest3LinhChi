@@ -3,7 +3,7 @@
 """
 from splinter import Browser
 from selenium.webdriver.chrome.options import Options
-from config import plog, CFConfig as cf, CFGameMode
+from config.config import plog, CFConfig as cf, CFGameMode
 from pygame.time import delay
 
 

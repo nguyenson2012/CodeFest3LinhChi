@@ -2,7 +2,7 @@
     sioclient.py
 """
 import socketio
-from config import CFConfig as cf, plog
+from config.config import CFConfig as cf, plog
 import threading
 
 
