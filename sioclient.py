@@ -48,11 +48,11 @@ class CFSocket:
 
     # Join a game
     def join_game(self):
-        self.sio.emit(cf.Event.JOIN, {
+        self.sio.emit(cf.Event.ACT_JOIN, {
             'game_id': self.game_id,
             'player_id': self.player_id
         })
-        plog(f'<emit> <{cf.Event.JOIN}> with {self.game_id} & {self.player_id}')
+        plog(f'<emit> <{cf.Event.ACT_JOIN}> with {self.game_id} & {self.player_id}')
 
     # Move the voi
     def direct_player(self, direct: str):
@@ -60,10 +60,13 @@ class CFSocket:
             1: LEFT 2: RIGHT 3: UP 4: DOWN
             b: bomb x: stop moving 
         '''
-        self.sio.emit(cf.Event.DRIVE, {
-            'direction': direct
-        })
-        plog(f'<emit> <{cf.Event.DRIVE}> {self.player_id} with {direct}')
+        try:
+            self.sio.emit(cf.Event.ACT_DRIVE, {
+                'direction': direct
+            })
+            plog(f'<emit> <{cf.Event.ACT_DRIVE}> {self.player_id} with {direct}')
+        except socketio.exceptions.BadNamespaceError as ex:
+            plog(f'{__file__} socketio BadNamespaceError: {ex}')
 
     # Taunt opponent
     def taunt_player(self, speak: str):
@@ -71,10 +74,10 @@ class CFSocket:
             command for message: 't1', 't2'
             command for icon: 'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8'
         '''
-        self.sio.emit(cf.Event.TAUNT, {
+        self.sio.emit(cf.Event.ACT_TAUNT, {
             'command': speak
         })
-        plog(f'<emit> {self.player_id} <{cf.Event.TAUNT}> with {speak}')
+        plog(f'<emit> {self.player_id} <{cf.Event.ACT_TAUNT}> with {speak}')
 
 
     def update_map(self):

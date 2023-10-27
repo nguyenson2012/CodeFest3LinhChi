@@ -12,15 +12,14 @@ from strat_dummy import get_next_move
 =================================DEMO=========================================
 """
 
-class RandomPlay:
+class Player:
     """
         Player object run
     """
     client: CFSocket = None
-    game_started: bool = False
 
     def __init__(self, gameid: str, playerid: str) -> None:
-        self.player = CFSocket(gameid, playerid)
+        self.client = CFSocket(gameid, playerid)
 
     def connect_and_join(self):
         self.client.sio_connect()

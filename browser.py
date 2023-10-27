@@ -9,14 +9,15 @@ from pygame.time import delay
 
 class GameBrowser:
     browser: Browser = None
+    gameid: str = None
 
     def __init__(self, driver: str = 'chrome', maximize: bool = False, wsize: tuple = (1400, 900)) -> None:
         if maximize:
-            self.browser = Browser(self.driver, fullscreen=maximize)
+            self.browser = Browser(driver, fullscreen=maximize)
         else:
             chrome_options = Options()
             chrome_options.add_argument(f'--window-size={wsize[0]},{wsize[1]}')
-            self.browser = Browser(self.driver, options=chrome_options)
+            self.browser = Browser(driver, options=chrome_options)
         plog(self.browser)
 
     def get_game_id(self, secs: float = 1):
@@ -44,8 +45,8 @@ class GameBrowser:
             fighting.click()
             delay(secs)
             # TODO ------------------------------------------------------
-            gameid_str = 'xxx-yyy'
-        return gameid_str
+            self.gameid = None
+        return self.gameid
 
     def visit(self, url: str):
         plog(url)

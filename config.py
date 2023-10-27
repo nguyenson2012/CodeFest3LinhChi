@@ -2,7 +2,6 @@
     config.py
 """
 from datetime import datetime
-import setproctitle
 from enum import Enum
 
 """
@@ -23,7 +22,7 @@ class CFConfig:
         W_HEIGHT = 140
 
     class Server:
-        URL: str = 'http://localhost/'
+        URL: str = 'http://localhost/'                           # Change to actual server URL when in contest
         HREF_TRAINING: str = '/training/login'
         HREF_FIGHTING: str = '/fighting'
         HREF_GAME_TRAINING: str = '/training/stage/'
@@ -58,5 +57,3 @@ class CFConfig:
 
 def plog(msg):
     print(datetime.now(), CFConfig.Game.TITLE, msg)
-
-setproctitle.setproctitle(CFConfig.Game.TITLE)
