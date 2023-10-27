@@ -3,6 +3,7 @@
 """
 import socketio
 from config import CFConfig as cf, plog
+import threading
 
 
 class CFSocket:
@@ -12,6 +13,11 @@ class CFSocket:
     game_id: str = None
     player_id: str = None
     sio: socketio.Client = None
+    map_json: dict = None
+    lock = None
+    is_joined: bool = False
+    is_startgame: bool = False
+    is_stoptraining: bool = False
 
     def __init__(self, game, player) -> None:
         self.game_id = game
@@ -20,19 +26,25 @@ class CFSocket:
         self.sio.on('*', self.on_event)
         self.sio.on('connect', self.on_connect)
         self.sio.on('disconnect', self.on_disconnect)
+        self.lock = threading.Lock()
+
+    # start connection & wait for event
+    def sio_connect(self):
+        self.sio.connect(cf.Server.URL)
+
+    # end connection
+    def sio_terminate(self):
+        self.sio.disconnect()
+
+    def is_connected(self) -> bool:
+        return self.sio.connected
 
     # Listeners
     def on_connect(self):
         plog(f'<on_connect> connection established with {cf.Server.URL}')
-        plog(self.sio.namespaces)
-        plog(self.sio.namespace_handlers)
 
     def on_disconnect(self):
         plog(f'<on_disconnect> disconnected from server {cf.Server.URL}')
-
-    # catch all
-    def on_event(self, *args):
-        plog(f'<on_event> {args}')
 
     # Join a game
     def join_game(self):
@@ -64,22 +76,27 @@ class CFSocket:
         })
         plog(f'<emit> {self.player_id} <{cf.Event.TAUNT}> with {speak}')
 
-    # end connection
-    def sio_terminate(self):
-        self.sio.disconnect()
 
-    # start connection & wait for event
-    def sio_connect(self):
-        self.sio.connect(cf.Server.URL)
+    def update_map(self):
+        if self.map_json == None:
+            return
+        plog(f'<map updated> {self.map_json["timestamp"]} {self.map_json["tag"]}')
+        if self.map_json['tag'] == cf.Event.ON_GAME_START:
+            self.is_startgame = True
 
-    def is_connected(self) -> bool:
-        return self.sio.connected
-
-    # Insert Jobs
-    def run_job(self, job: any, *args):
-        task = self.sio.start_background_task(job, *args)
-        plog(task)
-
-    # wait loop
-    def sio_wait(self):
-        self.sio.wait()
+    # catch all
+    def on_event(self, *args):
+        if args[0] == cf.Event.ON_BEAT:
+            plog(f'<on_event> {args[0]}')
+            self.lock.acquire()
+            self.map_json = args[1]
+            self.update_map()
+            self.lock.release()
+        elif args[0] == cf.Event.ON_JOIN:
+            plog(f'<on_event> {args}')
+            self.is_joined = True
+        elif args[0] == cf.Event.ON_GAME_TRAINING_STOP:
+            plog(f'<on_event> {args}')
+            self.is_stoptraining = True
+        else:
+            plog(f'<on_event> {args}')

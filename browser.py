@@ -4,15 +4,13 @@
 from splinter import Browser
 from selenium.webdriver.chrome.options import Options
 from config import plog, CFConfig as cf, CFGameMode
-from time import sleep
+from pygame.time import delay
 
 
 class GameBrowser:
-    driver: str = None
     browser: Browser = None
 
-    def __init__(self, driver: str = 'chrome', maximize: bool = False, wsize: tuple = (1600, 900)) -> None:
-        self.driver = driver
+    def __init__(self, driver: str = 'chrome', maximize: bool = False, wsize: tuple = (1400, 900)) -> None:
         if maximize:
             self.browser = Browser(self.driver, fullscreen=maximize)
         else:
@@ -21,30 +19,30 @@ class GameBrowser:
             self.browser = Browser(self.driver, options=chrome_options)
         plog(self.browser)
 
-    def get_game_id(self, delay: float = 1):
-        gameid_str = ''
+    def get_game_id(self, secs: float = 1):
         if cf.Game.MODE == CFGameMode.MODE_TRAINING:
             training = self.browser.links.find_by_href(cf.Server.HREF_TRAINING)
             plog(training['href'])
             training.click()
-            sleep(delay)
+            delay(secs)
             keybox = self.browser.find_by_name('teamkey')
             plog(keybox['placeholder'])
             keybox.click()
-            sleep(delay)
+            delay(secs)
             keybox.type(cf.Server.DEMO_KEY)
-            sleep(delay)
+            delay(secs)
             join_button = self.browser.find_by_text('Join Game')
             join_button.click()
-            sleep(delay)
-            gameid_str = self.browser.find_by_id('gameid').text
-            plog(f'game_id {gameid_str}')
-            sleep(delay)
+            delay(secs)
+            #
+            self.gameid = self.browser.find_by_id('gameid').text
+            plog(f'game_id {self.gameid}')
+            delay(secs)
         elif cf.Game.MODE == CFGameMode.MODE_FIGHTING:
             fighting = self.browser.links.find_by_href(cf.Server.HREF_FIGHTING)
             plog(fighting['href'])
             fighting.click()
-            sleep(delay)
+            delay(secs)
             # TODO ------------------------------------------------------
             gameid_str = 'xxx-yyy'
         return gameid_str
@@ -58,7 +56,11 @@ class GameBrowser:
 
 
 if __name__ == '__main__':
-    gameb = GameBrowser(maximize = True)
-    gameb.visit(cf.Server.URL)
-    gameb.get_game_id()
-    gameb.quit()
+    try:
+        gameb = GameBrowser(maximize = True)
+        gameb.visit(cf.Server.URL)
+        gameb.get_game_id()
+        while True:
+            delay(3)
+    except Exception:
+        gameb.quit()
