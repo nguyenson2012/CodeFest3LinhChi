@@ -1,88 +1,117 @@
 """
     game.py
 """
-from config import CFConfig as cf, plog, CFGameMode
+from config import CFConfig as cf, plog
 from browser import GameBrowser
 from sioclient import CFSocket
-from concurrent.futures import ThreadPoolExecutor
-import keyboard
-# for demo only
-from time import sleep
-from random import randint
-
+import pygame as pg
+from sys import argv
+from strat_dummy import get_next_move
 
 """
 =================================DEMO=========================================
 """
 
-class RandomPlay:
+class Player:
     """
-        Random run
+        Player object run
     """
-    MOVE_SET = ['1','2','3','4','b','x']
-    TOTAL_MOVES = 60
-    player: CFSocket = None
-    running: bool = False
+    client: CFSocket = None
 
     def __init__(self, gameid: str, playerid: str) -> None:
-        self.player = CFSocket(gameid, playerid)
+        self.client = CFSocket(gameid, playerid)
 
-    def random_controller(self):
-        plog('Random controller is called!')
-        self.running = True
-        for m in range(self.TOTAL_MOVES):
-            sleep(2)
-            plog(f'{self.player.player_id} step {m}')
-            move = self.MOVE_SET[randint(0, len(self.MOVE_SET)-1)]
-            self.player.direct_player(move)
-            if not self.running:
+    def connect_and_join(self):
+        self.client.sio_connect()
+        retry: int = 0
+        while retry < 10:
+            pg.time.wait(200)
+            if self.client.is_connected():
+                self.client.join_game()
                 break
+            retry += 1
 
-    def play_main(self):
-        self.player.sio_connect()
-        sleep(2)
-        self.player.join_game()
-        sleep(5)
-        self.player.run_job(self.random_controller)
-        self.player.sio_wait()
-
-    def play_exit(self):
-        self.player.sio_terminate()
-        self.running = False
+    def quite_game(self):
+        self.client.sio_terminate()
 
 
-browser: GameBrowser = None
-play_1: RandomPlay = None
-play_2: RandomPlay = None
+# ==========================================================================
+#                           GamePlay AI
+#   Add or replace the Dummy AI here
+# ==========================================================================
 
-def start_game():
-    global browser, play_1, play_2
-    # must use the same gamebrowser to get the same game_id
-    browser = GameBrowser()
-    browser.visit(cf.Server.URL)
-    gameid = browser.get_game_id(0.5)
-    play_1 = RandomPlay(gameid, cf.Server.PLAYER_1_ID)
-    play_2 = RandomPlay(gameid, cf.Server.PLAYER_2_ID)
+    def move_player(self, gamewindow: pg.Surface = None):
+        """
+            Calling AI from here
+        """
+        if self.client.is_startgame:
+            # Don't move by default
+            next_move = cf.MoveSet.STOP
+            ############################### Dummy AI
+            next_move = get_next_move(self.client.map_json)
+            ###############################
+            self.client.direct_player(next_move)
+            if gamewindow != None:
+                gamewindow.blit(pg.font.SysFont('Monaco',72).render(next_move,True,(255,128,0)), (40, 40))
 
-    with ThreadPoolExecutor(3) as executor:
-        for future in [
-            executor.submit(play_1.play_main),
-            executor.submit(play_2.play_main)
-        ]:
-            plog(future.result())
 
-def end_game(key):
-    plog(f'End Game Sent ---------- {key}')
-    play_1.play_exit()
-    play_2.play_exit()
-    sleep(3)
-    browser.quit()
+# ==========================================================================
+#                           Main Loop
+# ==========================================================================
+
+def main_loop(player: Player, winflags: int = 0):
+    pg.init()
+    clock = pg.time.Clock()
+    GameMain = pg.display.set_mode((cf.Game.W_WIDTH, cf.Game.W_HEIGHT), flags=winflags)
+    pg.display.set_caption(f'{cf.Game.TITLE} - {player.client.player_id}')
+    GameMain.fill((255,255,255))
+
+    running = True
+    while running:
+        # For shown window
+        for event in pg.event.get():
+            # Check for QUIT event. If QUIT, then set running to false.
+            if event.type == pg.QUIT:
+                running = False
+                plog(event)
+        # For hidden window
+        if player.client.is_stoptraining:
+            running = False
+
+        # Clear screen
+        GameMain.fill((0, 0, 0))
+
+        # Decide the next move
+        player.move_player(GameMain)
+
+        # Update the display
+        pg.display.flip()
+
+        # Program frames per second
+        clock.tick(5) # ~200ms/move
+    #
+    player.quite_game()
+    pg.quit()
+
+
+def main_player():
+    gameb = GameBrowser()
+    gameb.visit(cf.Server.URL)
+    game_room = gameb.get_game_id()
+    player = Player(game_room, cf.Server.PLAYER_1_ID)
+    player.connect_and_join()
+    main_loop(player)
+    gameb.quit()
+
+def buddy_player():
+    game_room = input('Game ID: ')
+    player = Player(game_room, cf.Server.PLAYER_2_ID)
+    player.connect_and_join()
+    main_loop(player, pg.HIDDEN)
 
 
 if __name__ == '__main__':
-    if cf.Game.MODE == CFGameMode.MODE_TRAINING:
-        try:
-            keyboard.on_press_key('z', end_game)
-            start_game()
-        except Exception as exc:
-            plog(f'Exception coccured {exc}')
+    if len(argv) > 1 and argv[1] == 'buddy':
+        buddy_player()
+    else:
+        main_player()

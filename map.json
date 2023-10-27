@@ -1,0 +1,119 @@
+{
+    "id": 98,
+    "timestamp": 1698340148500,
+    "map_info": {
+        "size": {
+            "cols": 26,
+            "rows": 14
+        },
+        "players": [
+            {
+                "id": "player1-xxx",
+                "currentPosition": {
+                    "col": 10,
+                    "row": 6
+                },
+                "spawnBegin": {
+                    "col": 10,
+                    "row": 5
+                },
+                "score": 1,
+                "lives": 999,
+                "speed": 230,
+                "power": 1,
+                "delay": 2000,
+                "dragonEggSpeed": 0,
+                "dragonEggAttack": 0,
+                "dragonEggDelay": 0,
+                "dragonEggMystic": 0,
+                "pill": 0,
+                "box": 1,
+                "quarantine": 0,
+                "gstEggBeingAttacked": 0,
+                "dragonEggMysticMinusEgg": 0,
+                "dragonEggMysticAddEgg": 0,
+                "dragonEggMysticIsolateGate": 0
+            },
+            {
+                "id": "player2-xxx",
+                "currentPosition": {
+                    "col": 13,
+                    "row": 6
+                },
+                "spawnBegin": {
+                    "col": 15,
+                    "row": 5
+                },
+                "score": 4,
+                "lives": 998,
+                "speed": 245,
+                "power": 1,
+                "delay": 2000,
+                "dragonEggSpeed": 1,
+                "dragonEggAttack": 0,
+                "dragonEggDelay": 0,
+                "dragonEggMystic": 0,
+                "pill": 0,
+                "box": 3,
+                "quarantine": 0,
+                "gstEggBeingAttacked": 0,
+                "dragonEggMysticMinusEgg": 0,
+                "dragonEggMysticAddEgg": 0,
+                "dragonEggMysticIsolateGate": 0
+            }
+        ],
+        "map": [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 0, 0, 0, 1],
+            [1, 2, 5, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 0, 3, 0, 1],
+            [1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 0, 0, 0, 1],
+            [1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 1],
+            [1, 2, 2, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 2, 2, 1],
+            [1, 2, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 2, 2, 1],
+            [1, 2, 2, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 2, 2, 1],
+            [1, 2, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 2, 2, 1],
+            [1, 1, 1, 2, 2, 1, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1],
+            [1, 0, 0, 0, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1],
+            [1, 0, 3, 0, 2, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 2, 2, 5, 2, 1],
+            [1, 0, 0, 0, 2, 1, 2, 2, 2, 2, 2, 1, 4, 4, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        ],
+        "bombs": [
+            {
+                "row": 6,
+                "col": 10,
+                "remainTime": 954,
+                "playerId": "player1-xxx"
+            },
+            {
+                "row": 6,
+                "col": 14,
+                "remainTime": 1755,
+                "playerId": "player2-xxx"
+            }
+        ],
+        "spoils": [
+            {
+                "row": 8,
+                "col": 9,
+                "spoil_type": 4
+            }
+        ],
+        "gameStatus": null,
+        "dragonEggGSTArray": [
+            {
+                "row": 2,
+                "col": 2,
+                "id": "player1-xxx"
+            },
+            {
+                "row": 11,
+                "col": 23,
+                "id": "player2-xxx"
+            }
+        ]
+    },
+    "tag": "player:stop-moving",
+    "player_id": "player2-xxx",
+    "gameRemainTime": 0
+}

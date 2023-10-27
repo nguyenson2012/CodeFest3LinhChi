@@ -1,7 +1,0 @@
-"""
-    map.py
-"""
-import json
-
-
-
