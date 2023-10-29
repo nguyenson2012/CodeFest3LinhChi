@@ -1,12 +1,12 @@
 """
     game.py
 """
-from config import CFConfig as cf, plog
+from config.config import CFConfig as cf, plog
 from browser import GameBrowser
-from sioclient import CFSocket
+from connection.sioclient import CFSocket
 import pygame as pg
 from sys import argv
-from strat_dummy import get_next_move
+from data.strat_dummy import get_next_move
 
 """
 =================================DEMO=========================================

@@ -27,7 +27,7 @@ class CFConfig:
         HREF_FIGHTING: str = '/fighting'
         HREF_GAME_TRAINING: str = '/training/stage/'
         # DEMO_KEY: str = 'd8b0c0bc-3e08-4751-bc16-e5a85e4f1074'   # Modify this value based on running environment # PC Steel Dragon
-        DEMO_KEY: str = 'b1693a74-1e63-4424-8d32-6c45a4b30dfc'     # Laptop Surface
+        DEMO_KEY: str = '55761bcb-e57c-4e73-84ca-545a852b40a4'     # Laptop Surface
         PLAYER_1_ID: str = 'player1-xxx'
         PLAYER_2_ID: str = 'player2-xxx'
 
