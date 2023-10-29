@@ -22,3 +22,8 @@ class Direction(Enum):
     LEFT = (-1, 0)
     DOWN = (0, 1)
     UP = (0, -1)
+
+
+class ACTION(Enum):
+    FIND_EAT_EGGS = "FIND_EAT_EGGS"
+    ATTACH_GST_EGGS = "ATTACH_GST_EGGS"

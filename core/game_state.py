@@ -12,7 +12,7 @@ class MapInfo:
     def __init__(self, data):
         self.size = MapSize(data.get("size"))
         self.players = [Player(player_data) for player_data in data.get("players")]
-        self.map = data.get("data")
+        self.map = data.get("map")
         self.bombs = [Bomb(bomb_data) for bomb_data in data.get("bombs")]
         self.spoils = [Spoil(spoil_data) for spoil_data in data.get("spoils")]
         self.gameStatus = data.get("gameStatus")
