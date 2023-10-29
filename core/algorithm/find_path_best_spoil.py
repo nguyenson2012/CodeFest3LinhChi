@@ -1,8 +1,6 @@
-import time
-
 import heapq
-
 from core.tools.time_counter import measure_time
+from timeout_function_decorator import timeout
 
 
 def is_valid_move(dimension_map_data, position, traversable_points=None):
@@ -57,6 +55,7 @@ def find_best_path(map_data, start, end, traversable_points=None):
 
 
 # Public to use
+@timeout(0.5, RuntimeError)
 @measure_time
 def find_path_best_spoil(map_data, start_position, spoil_locations, traversable_points=None):
     best_path = None

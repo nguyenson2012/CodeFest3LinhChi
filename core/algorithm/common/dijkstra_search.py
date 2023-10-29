@@ -1,7 +1,4 @@
 import heapq
-import time
-
-from core.tools.time_counter import measure_time
 
 
 def get_neighbors(position):
@@ -18,7 +15,6 @@ def is_valid_move(dimension_map_data, position, traversable_points=None):
         x] in traversable_points
 
 
-@measure_time
 def dijkstra_search(dimension_map_data, start, end, traversable_points=None):
     if traversable_points is None:
         traversable_points = [0]  # road

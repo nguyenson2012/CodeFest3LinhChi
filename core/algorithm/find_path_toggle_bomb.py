@@ -1,8 +1,11 @@
+from timeout_function_decorator import timeout
+
 from core.algorithm.common.a_star_search import a_star_search
 from core.tools.time_counter import measure_time
 
 
 # Public to use
+@timeout(0.5, RuntimeError)
 @measure_time
 def find_path_toggle_bomb(map_data, bomb_position, bomb_size, traversable_points=None):
     x, y = bomb_position

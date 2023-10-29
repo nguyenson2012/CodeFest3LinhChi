@@ -1,7 +1,4 @@
 import heapq
-import time
-
-from core.tools.time_counter import measure_time
 
 
 def heuristic(start, end):
@@ -22,7 +19,6 @@ def get_neighbors(position):
     return [(x + dx, y + dy) for dx, dy in offsets]
 
 
-@measure_time
 def a_star_search(dimension_map_data, start, end, traversable_points=None):
     if traversable_points is None:
         traversable_points = [0]  # road
