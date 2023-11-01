@@ -1,0 +1,3 @@
+pygame==2.5.1
+python-socketio==5.10.0
+timeout_function_decorator==2.0.0

@@ -8,6 +8,9 @@ class TerrainType(Enum):
     TELEPORT_GATE = 3
     QUARANTINE_PLACE = 4
     GST_DRAGON_EDGE = 5
+    ROAD_WITH_BOMB = 6
+    ROAD_WITH_EGG = 7
+    ROAD_WITH_PLAYER = 8
 
 
 class SpoilType(Enum):

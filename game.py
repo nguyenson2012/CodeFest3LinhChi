@@ -2,68 +2,50 @@
     game.py
 """
 from config.config import CFConfig as cf, plog
-from browser import GameBrowser
 from connection.sioclient import CFSocket
 import pygame as pg
 from sys import argv
-from data.strat_dummy import get_next_move
+from strategy.strat_dummy import get_next_move, get_next_move_random
 
-"""
-=================================DEMO=========================================
-"""
 
-class Player:
+def move_player(player: CFSocket, strat: int):
     """
-        Player object run
+        Calling AI from here
     """
-    client: CFSocket = None
+    if player.is_startgame or player.is_midgame:
+        # Don't move by default
+        next_move = cf.MoveSet.STOP
 
-    def __init__(self, gameid: str, playerid: str) -> None:
-        self.client = CFSocket(gameid, playerid)
+        # ===========================================================
+        # Add or replace the Dummy AI here
+        if strat == 1:
+            next_move = get_next_move(player.player_id, player.map_json)
+        elif strat == 2:
+            next_move = get_next_move_random()
+        # ===========================================================
 
-    def connect_and_join(self):
-        self.client.sio_connect()
-        retry: int = 0
-        while retry < 10:
-            pg.time.wait(200)
-            if self.client.is_connected():
-                self.client.join_game()
-                break
-            retry += 1
-
-    def quite_game(self):
-        self.client.sio_terminate()
-
-
-# ==========================================================================
-#                           GamePlay AI
-#   Add or replace the Dummy AI here
-# ==========================================================================
-
-    def move_player(self, gamewindow: pg.Surface = None):
-        """
-            Calling AI from here
-        """
-        if self.client.is_startgame:
-            # Don't move by default
-            next_move = cf.MoveSet.STOP
-            ############################### Dummy AI
-            next_move = get_next_move(self.client.map_json)
-            ###############################
-            self.client.direct_player(next_move)
-            if gamewindow != None:
-                gamewindow.blit(pg.font.SysFont('Monaco',72).render(next_move,True,(255,128,0)), (40, 40))
+        player.direct_player(next_move)
+        #
+        player = [x for x in player.map_json['map_info']['players'] if x['id'] == player.player_id][0]
+        return player['lives']
+    else:
+        return None
 
 
 # ==========================================================================
 #                           Main Loop
 # ==========================================================================
 
-def main_loop(player: Player, winflags: int = 0):
+def main_loop(game_id: str, player_id: str, strat: int = 1):
     pg.init()
     clock = pg.time.Clock()
-    GameMain = pg.display.set_mode((cf.Game.W_WIDTH, cf.Game.W_HEIGHT), flags=winflags)
-    pg.display.set_caption(f'{cf.Game.TITLE} - {player.client.player_id}')
+    GameMain = pg.display.set_mode((cf.Game.W_WIDTH, cf.Game.W_HEIGHT))
+
+    player = CFSocket(game_id, player_id)
+    player.connect_and_join()
+
+    pg.display.set_caption(f'{cf.Game.TITLE} - {player.player_id}')
+    pg.display.set_icon(pg.image.load('./data/3TinElephants_1024.jpg'))
     GameMain.fill((255,255,255))
 
     running = True
@@ -75,14 +57,16 @@ def main_loop(player: Player, winflags: int = 0):
                 running = False
                 plog(event)
         # For hidden window
-        if player.client.is_stoptraining:
+        if player.is_stoptraining:
             running = False
 
         # Clear screen
         GameMain.fill((0, 0, 0))
 
         # Decide the next move
-        player.move_player(GameMain)
+        lives = move_player(player, strat)
+        if lives != None:
+            GameMain.blit(pg.font.SysFont('Monaco',72).render(str(lives),True,(255,128,0)), (40, 40))
 
         # Update the display
         pg.display.flip()
@@ -94,24 +78,9 @@ def main_loop(player: Player, winflags: int = 0):
     pg.quit()
 
 
-def main_player():
-    gameb = GameBrowser()
-    gameb.visit(cf.Server.URL)
-    game_room = gameb.get_game_id()
-    player = Player(game_room, cf.Server.PLAYER_1_ID)
-    player.connect_and_join()
-    main_loop(player)
-    gameb.quit()
-
-def buddy_player():
-    game_room = input('Game ID: ')
-    player = Player(game_room, cf.Server.PLAYER_2_ID)
-    player.connect_and_join()
-    main_loop(player, pg.HIDDEN)
-
-
 if __name__ == '__main__':
-    if len(argv) > 1 and argv[1] == 'buddy':
-        buddy_player()
+    assert len(argv) >= 3, 'Need to provide both game_id and player_id'
+    if len(argv) == 4:
+        main_loop(argv[1], argv[2], argv[3])
     else:
-        main_player()
+        main_loop(argv[1], argv[2])
