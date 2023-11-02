@@ -1,4 +1,5 @@
 import time
+from config.config import plog
 
 
 def measure_time(func):
@@ -15,7 +16,7 @@ def measure_time(func):
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         execution_time = (end_time - start_time)
-        print(f"Execution of {func.__name__} time: {execution_time:.6f} seconds")
+        plog(f"Execution of {func.__name__} time: {execution_time:.6f} seconds")
         return result
 
     return wrapper

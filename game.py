@@ -2,116 +2,84 @@
     game.py
 """
 from config.config import CFConfig as cf, plog
-from browser import GameBrowser
 from connection.sioclient import CFSocket
-import pygame as pg
+import tkinter as tk
 from sys import argv
-from data.strat_dummy import get_next_move
+from strategy.strat_dummy import get_next_move
 
-"""
-=================================DEMO=========================================
-"""
 
-class Player:
+def move_player(player: CFSocket):
     """
-        Player object run
+        Calling AI from here
     """
-    client: CFSocket = None
+    if player.is_startgame or player.is_midgame:
+        # Don't move by default
+        next_move = cf.MoveSet.STOP
 
-    def __init__(self, gameid: str, playerid: str) -> None:
-        self.client = CFSocket(gameid, playerid)
+        # ===========================================================
+        # Add or replace the Dummy AI here
+        next_move = get_next_move(player.player_id, player.map_json)
+        # ===========================================================
 
-    def connect_and_join(self):
-        self.client.sio_connect()
-        retry: int = 0
-        while retry < 10:
-            pg.time.wait(200)
-            if self.client.is_connected():
-                self.client.join_game()
-                break
-            retry += 1
-
-    def quite_game(self):
-        self.client.sio_terminate()
-
-
-# ==========================================================================
-#                           GamePlay AI
-#   Add or replace the Dummy AI here
-# ==========================================================================
-
-    def move_player(self, gamewindow: pg.Surface = None):
-        """
-            Calling AI from here
-        """
-        if self.client.is_startgame:
-            # Don't move by default
-            next_move = cf.MoveSet.STOP
-            ############################### Dummy AI
-            next_move = get_next_move(self.client.map_json)
-            ###############################
-            self.client.direct_player(next_move)
-            if gamewindow != None:
-                gamewindow.blit(pg.font.SysFont('Monaco',72).render(next_move,True,(255,128,0)), (40, 40))
+        player.direct_player(next_move)
+        #
+        player = [x for x in player.map_json['map_info']['players'] if x['id'] == player.player_id][0]
+        return player['lives']
+    else:
+        return None
 
 
 # ==========================================================================
 #                           Main Loop
 # ==========================================================================
 
-def main_loop(player: Player, winflags: int = 0):
-    pg.init()
-    clock = pg.time.Clock()
-    GameMain = pg.display.set_mode((cf.Game.W_WIDTH, cf.Game.W_HEIGHT), flags=winflags)
-    pg.display.set_caption(f'{cf.Game.TITLE} - {player.client.player_id}')
-    GameMain.fill((255,255,255))
+def main_loop(game_id: str = None, player_id: str = None):
+    root = tk.Tk()
 
-    running = True
-    while running:
-        # For shown window
-        for event in pg.event.get():
-            # Check for QUIT event. If QUIT, then set running to false.
-            if event.type == pg.QUIT:
-                running = False
-                plog(event)
-        # For hidden window
-        if player.client.is_stoptraining:
-            running = False
+    if game_id == None or player_id == None:
+        game_id, player_id = root.clipboard_get().split(' ')
 
-        # Clear screen
-        GameMain.fill((0, 0, 0))
+    root.title(f'{cf.Game.TITLE} - {player_id}')
+    root.iconbitmap(cf.Game.IMAGE)
+    root.geometry(f'{cf.Game.W_WIDTH}x{cf.Game.W_HEIGHT}')
+    root.wm_attributes("-topmost", 1)
 
+    canvas = tk.Canvas(root, width=cf.Game.W_WIDTH, height=cf.Game.W_WIDTH)
+    canvas.pack(fill = 'both', expand = True)
+    background_image = tk.PhotoImage(file=cf.Game.IMAGE)
+    canvas.create_image(0, 0, anchor=tk.NW, image=background_image)
+
+    label = tk.Label(root, text=cf.Game.TITLE, font=('Monaco', 40), fg='Red')
+    label.pack(pady=20)
+
+    player = CFSocket(game_id, player_id)
+    player.connect_and_join()
+
+    def update():
         # Decide the next move
-        player.move_player(GameMain)
+        lives = move_player(player)
+        if lives != None:
+            label.config(text=str(lives))
 
-        # Update the display
-        pg.display.flip()
+        # quit game
+        if player.is_stoptraining:
+            root.destroy()
 
-        # Program frames per second
-        clock.tick(5) # ~200ms/move
-    #
+        # Schedule the next update after xxx milliseconds
+        root.after(cf.Game.TIMEOUT, update)
+
+    # will be called each xxx msec
+    update()
+
+    # Tk mainloop
+    root.mainloop()
+
+    # disconnect
     player.quite_game()
-    pg.quit()
-
-
-def main_player():
-    gameb = GameBrowser()
-    gameb.visit(cf.Server.URL)
-    game_room = gameb.get_game_id()
-    player = Player(game_room, cf.Server.PLAYER_1_ID)
-    player.connect_and_join()
-    main_loop(player)
-    gameb.quit()
-
-def buddy_player():
-    game_room = input('Game ID: ')
-    player = Player(game_room, cf.Server.PLAYER_2_ID)
-    player.connect_and_join()
-    main_loop(player, pg.HIDDEN)
 
 
 if __name__ == '__main__':
-    if len(argv) > 1 and argv[1] == 'buddy':
-        buddy_player()
+    if len(argv) == 3:
+        main_loop(argv[1], argv[2])
     else:
-        main_player()
+        main_loop()
