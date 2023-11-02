@@ -4,29 +4,27 @@
 import socketio
 from config.config import CFConfig as cf, plog
 import threading
+from pygame.time import wait
 
 
 class CFSocket:
     """
         Class in charged of communication with server.
     """
-    game_id: str = None
-    player_id: str = None
-    sio: socketio.Client = None
-    map_json: dict = None
-    lock = None
-    is_joined: bool = False
-    is_startgame: bool = False
-    is_stoptraining: bool = False
 
     def __init__(self, game, player) -> None:
-        self.game_id = game
-        self.player_id = player
-        self.sio = socketio.Client()
+        self.game_id: str = game
+        self.player_id: str = player
+        self.sio: socketio.Client = socketio.Client()
         self.sio.on('*', self.on_event)
         self.sio.on('connect', self.on_connect)
         self.sio.on('disconnect', self.on_disconnect)
         self.lock = threading.Lock()
+        self.map_json: dict = None
+        self.is_joined: bool = False
+        self.is_startgame: bool = False
+        self.is_midgame: bool = False
+        self.is_stoptraining: bool = False
 
     # start connection & wait for event
     def sio_connect(self):
@@ -83,14 +81,15 @@ class CFSocket:
     def update_map(self):
         if self.map_json == None:
             return
-        plog(f'<map updated> {self.map_json["timestamp"]} {self.map_json["tag"]}')
         if self.map_json['tag'] == cf.Event.ON_GAME_START:
             self.is_startgame = True
+        elif self.map_json['tag'] == cf.Event.ON_MID_GAME:
+            self.is_midgame = True
 
     # catch all
     def on_event(self, *args):
         if args[0] == cf.Event.ON_BEAT:
-            plog(f'<on_event> {args[0]}')
+            plog(f'<on_event> {args[0]} {args[1]["tag"]} {args[1]["timestamp"]}')
             self.lock.acquire()
             self.map_json = args[1]
             self.update_map()
@@ -103,3 +102,18 @@ class CFSocket:
             self.is_stoptraining = True
         else:
             plog(f'<on_event> {args}')
+
+
+    # Should only use these functions outside of CFSocket
+    def connect_and_join(self):
+        self.sio_connect()
+        retry: int = 0
+        while retry < 10:
+            wait(200)
+            if self.is_connected():
+                self.join_game()
+                break
+            retry += 1
+
+    def quite_game(self):
+        self.sio_terminate()
