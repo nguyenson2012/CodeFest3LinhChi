@@ -4,7 +4,7 @@
 import socketio
 from config.config import CFConfig as cf, plog
 import threading
-from pygame.time import wait
+from time import sleep
 
 
 class CFSocket:
@@ -89,7 +89,7 @@ class CFSocket:
     # catch all
     def on_event(self, *args):
         if args[0] == cf.Event.ON_BEAT:
-            plog(f'<on_event> {args[0]} {args[1]["tag"]} {args[1]["timestamp"]}')
+            plog(f'<on_event> {args[0]} {args[1]["tag"]} {args[1]["timestamp"]} {args[1].get("player_id")}')
             self.lock.acquire()
             self.map_json = args[1]
             self.update_map()
@@ -109,7 +109,7 @@ class CFSocket:
         self.sio_connect()
         retry: int = 0
         while retry < 10:
-            wait(200)
+            sleep(0.2)
             if self.is_connected():
                 self.join_game()
                 break

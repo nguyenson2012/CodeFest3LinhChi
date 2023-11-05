@@ -13,8 +13,8 @@ class ServerUri:
     URL_CONTEST: str = 'http://192.168.0.x/'
 
 class DemoKey:
-    LONG_LAPTOP = 'b1693a74-1e63-4424-8d32-6c45a4b30dfc'
-    LONG_PC = '6d6de879-5ce5-4896-a1f1-44d83aeae9c1'
+    LONG_LAPTOP_1020 = 'b1693a74-1e63-4424-8d32-6c45a4b30dfc'
+    LONG_PC_1103 = 'cc439bc0-76fe-4006-b2f3-97b04aad5be0'
     TU_LAPTOP = '55761bcb-e57c-4e73-84ca-545a852b40a4'
 
 class CFGameMode(Enum):
@@ -29,7 +29,7 @@ class CFConfig:
         MODE: Enum = CFGameMode.MODE_TRAINING
         W_WIDTH = 480
         W_HEIGHT = 640
-        TIMEOUT = 200 # miliseconds
+        TIMEOUT = 430 # miliseconds
         IMAGE = './data/3TinElephants.png'
 
     class Server:
@@ -37,7 +37,7 @@ class CFConfig:
         HREF_TRAINING: str = '/training/login'
         HREF_FIGHTING: str = '/fighting'
         HREF_GAME_TRAINING: str = '/training/stage/'
-        DEMO_KEY: str = DemoKey.LONG_PC                          # Change to actual key during contest
+        DEMO_KEY: str = DemoKey.LONG_PC_1103                     # Change to actual key during contest
         PLAYER_1_ID: str = 'player1-xxx'
         PLAYER_2_ID: str = 'player2-xxx'
 
@@ -65,6 +65,13 @@ class CFConfig:
         DOWN: str = '4'
         BOMB: str = 'b'
         STOP: str = 'x'
+
+    class MaxSteps:
+        MAX_STEPS = 12
+        MAX_STEPS_COLLECT_SPOIL = 50
+        MAX_STEPS_BOMB_BALK = 30
+        MAX_STEPS_BOMB_EGG = 50
+        MAX_STEPS_RUN_AWAY = 12
 
 def plog(msg):
     print(datetime.now(), CFConfig.Game.TITLE, msg)
