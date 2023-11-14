@@ -3,6 +3,7 @@
 """
 import socketio
 from config.config import CFConfig as cf, plog
+from core.game_state import GameState, Player
 import threading
 from time import sleep
 
@@ -12,19 +13,26 @@ class CFSocket:
         Class in charged of communication with server.
     """
 
-    def __init__(self, game, player) -> None:
-        self.game_id: str = game
-        self.player_id: str = player
+    def __init__(self, gameid, playerid) -> None:
+        self.game_id: str = gameid
+        self.player_id: str = playerid
+
         self.sio: socketio.Client = socketio.Client()
         self.sio.on('*', self.on_event)
         self.sio.on('connect', self.on_connect)
         self.sio.on('disconnect', self.on_disconnect)
-        self.lock = threading.Lock()
-        self.map_json: dict = None
+
         self.is_joined: bool = False
         self.is_startgame: bool = False
         self.is_midgame: bool = False
         self.is_stoptraining: bool = False
+
+        self.lock = threading.Lock()
+        self.map_json: dict = None
+        self.games: GameState = None
+        self.player: Player = None
+        self.player_other: Player = None
+
 
     # start connection & wait for event
     def sio_connect(self):
@@ -81,10 +89,21 @@ class CFSocket:
     def update_map(self):
         if self.map_json == None:
             return
+
+        # update game state
         if self.map_json['tag'] == cf.Event.ON_GAME_START:
             self.is_startgame = True
         elif self.map_json['tag'] == cf.Event.ON_MID_GAME:
             self.is_midgame = True
+
+        # update game info
+        del self.games
+        self.games = GameState(data=self.map_json)
+
+        assert len(self.games.map_info.players) == 2
+        self.player = [x for x in self.games.map_info.players if x.id == self.player_id][0]
+        self.player_other = [x for x in self.games.map_info.players if x.id != self.player_id][0]
+
 
     # catch all
     def on_event(self, *args):

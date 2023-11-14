@@ -8,23 +8,22 @@ from sys import argv
 from strategy.strat_dummy import get_next_move
 
 
-def move_player(player: CFSocket):
+def move_player(client: CFSocket):
     """
         Calling AI from here
     """
-    if player.is_startgame or player.is_midgame:
+    if client.is_startgame or client.is_midgame:
         # Don't move by default
         next_move = cf.MoveSet.STOP
 
         # ===========================================================
         # Add or replace the Dummy AI here
-        next_move = get_next_move(player.player_id, player.map_json)
+        next_move = get_next_move(client)
         # ===========================================================
 
-        player.direct_player(next_move)
+        client.direct_player(next_move)
         #
-        player = [x for x in player.map_json['map_info']['players'] if x['id'] == player.player_id][0]
-        return player['lives']
+        return client.player.lives
     else:
         return None
 
@@ -47,17 +46,17 @@ def main_loop(game_id: str = None, player_id: str = None):
     label = tk.Label(root, text=cf.Game.TITLE, anchor=tk.NE, image=image, compound=tk.LEFT, font=('Monaco', 40), fg='Red')
     label.pack()
 
-    player = CFSocket(game_id, player_id)
-    player.connect_and_join()
+    client = CFSocket(game_id, player_id)
+    client.connect_and_join()
 
     def update():
         # Decide the next move
-        lives = move_player(player)
+        lives = move_player(client)
         if lives != None:
             label.config(text=str(lives))
 
         # quit game
-        if player.is_stoptraining:
+        if client.is_stoptraining:
             root.destroy()
 
         # Schedule the next update after xxx milliseconds
@@ -70,7 +69,7 @@ def main_loop(game_id: str = None, player_id: str = None):
     root.mainloop()
 
     # disconnect
-    player.quite_game()
+    client.quite_game()
 
 
 if __name__ == '__main__':
