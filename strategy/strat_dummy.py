@@ -19,6 +19,7 @@ from core.tools.time_counter import measure_time
 
 class ExplosionMap:
     EXPLOSION_DURATION = 650
+    COUNTDOWN_DURATION = 400
 
     def __init__(self, rows: int, cols: int) -> None:
         self.rows = rows
@@ -35,7 +36,7 @@ class ExplosionMap:
         # clear exploded cells
         for row in self.data:
             for i in range(self.cols):
-                if row[i] < self.timestamp:
+                if row[i] + self.EXPLOSION_DURATION < self.timestamp:
                     row[i] = 0
 
         # add new cells in bomb's range
@@ -43,7 +44,7 @@ class ExplosionMap:
             player:Player = [player for player in games.map_info.players if player.id == bomb.playerId][0]
             explosions = expand_by_lines_plus_self((bomb.col, bomb.row), player.power, games.map_info.size)
             for col, row in explosions:
-                self.data[row][col] = self.timestamp + bomb.remainTime + self.EXPLOSION_DURATION
+                self.data[row][col] = self.timestamp + bomb.remainTime
 
 # keep the state throughout the game
 global explosions; explosions = None
@@ -104,10 +105,12 @@ def plant_bomb(pos: tuple, maps, msize: MapSize):
         if maps[y][x] in SAFE_ROAD:
             bomb_path.append((x, y))
             break
+    if len(bomb_path) == 1:  # no near cell is safe, no bomb placed
+        return []
 
     directions = coordinates_to_directions(bomb_path)
     moves = [cf.MoveSet.BOMB]
-    moves += [str(x) for x in directions] + [cf.MoveSet.STOP]
+    moves += [str(x) for x in directions]
     return moves
 
 
@@ -139,8 +142,11 @@ def find_path_to(maps, pos: tuple, locations, traversable: List, path_limit: int
 def update_map_with_object(games: GameState, player: Player, player_other: Player, explosions: ExplosionMap):
     maps = games.map_info.map
     rows, cols = (games.map_info.size.rows, games.map_info.size.cols)
+    current_time = games.timestamp
     px, py = (player.currentPosition.col, player.currentPosition.row)
     pox, poy = (player_other.currentPosition.col, player_other.currentPosition.row)
+
+    # this map objects should be mutually exclusive
     maps[poy][pox] = TerrainType.ROAD_WITH_OTHER_PLAYER.value
 
     for bomb in games.map_info.bombs:
@@ -149,14 +155,6 @@ def update_map_with_object(games: GameState, player: Player, player_other: Playe
             # need to override bomb with bomb_and_player after dropping bomb for traversable points
             maps[py][px] = TerrainType.ROAD_WITH_BOMB_AND_PLAYER.value
 
-    for row in range(rows):
-        for col in range(cols):
-            if explosions.data[row][col] > 0:
-                if maps[row][col] in SAFE_ROAD:
-                    # override traversable points with explosion
-                    maps[row][col] = TerrainType.ROAD_WITH_EXPLOSION.value
-
-
     for egg in games.map_info.spoils:
         # ROAD_WITH_EGG + SPEED_EGG
         # ROAD_WITH_EGG + ATTACH_EGG
@@ -164,6 +162,16 @@ def update_map_with_object(games: GameState, player: Player, player_other: Playe
         # ROAD_WITH_EGG + MYSTICS
         maps[egg.row][egg.col] = TerrainType.ROAD_WITH_EGG.value + egg.spoil_type
 
+
+    # override traversable points with explosion, this cells are prediction and can be overlapped with eggs & players
+    for row in range(rows):
+        for col in range(cols):
+            if 0 < explosions.data[row][col] <= current_time + explosions.COUNTDOWN_DURATION and maps[row][col] in SAFE_ROAD:
+                maps[row][col] = TerrainType.ROAD_WITH_EXPLOSION.value
+            elif explosions.data[row][col] > current_time + explosions.COUNTDOWN_DURATION and maps[row][col] in SAFE_ROAD:
+                maps[row][col] = TerrainType.ROAD_WITH_COUNTDOWN.value
+
+    # debugging only
     mstr = ',\n'.join([str(row) for row in games.map_info.map])
     plog(f'Maps: player{(px, py)} opponent{(pox, poy)}\n{mstr}')
 
@@ -262,7 +270,12 @@ def move_away_from_bomb(games: GameState, player: Player, maxsteps: int):
     maps = games.map_info.map
 
     # skip if not in explosion range
-    if maps[py][px] not in [TerrainType.ROAD_WITH_BOMB.value, TerrainType.ROAD_WITH_EXPLOSION.value, TerrainType.ROAD_WITH_BOMB_AND_PLAYER.value]:
+    if maps[py][px] not in [
+        TerrainType.ROAD_WITH_BOMB.value,
+        TerrainType.ROAD_WITH_BOMB_AND_PLAYER.value,
+        TerrainType.ROAD_WITH_EXPLOSION.value,
+        TerrainType.ROAD_WITH_COUNTDOWN.value
+        ]:
         return None
 
     safe_locations = []
@@ -275,7 +288,11 @@ def move_away_from_bomb(games: GameState, player: Player, maxsteps: int):
         return None
 
     # Excluded cells with player from the escape path
-    return find_path_to(maps, (px, py), safe_locations, SAFE_ROAD + [TerrainType.ROAD_WITH_BOMB_AND_PLAYER.value] , maxsteps)
+    return find_path_to(
+        maps, (px, py), safe_locations,
+        SAFE_ROAD + [TerrainType.ROAD_WITH_BOMB_AND_PLAYER.value, TerrainType.ROAD_WITH_COUNTDOWN.value],
+        maxsteps
+    )
 
 
 # ======================================================================================
