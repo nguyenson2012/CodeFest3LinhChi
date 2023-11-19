@@ -20,8 +20,9 @@ from core.tools.time_counter import measure_time
 """
 
 class ExplosionMap:
-    EXPLOSION_DURATION = 650
-    COUNTDOWN_DURATION = 400
+    EXPLOSION_DURATION = 700
+    COUNTDOWN_DURATION = 2000
+    CROSSABLE_DURATION = 600
 
     def __init__(self, rows: int, cols: int) -> None:
         self.rows = rows
@@ -38,15 +39,14 @@ class ExplosionMap:
         # clear exploded cells
         for row in self.data:
             for i in range(self.cols):
-                if row[i] + self.EXPLOSION_DURATION < self.timestamp:
+                if row[i] + self.COUNTDOWN_DURATION + self.EXPLOSION_DURATION < self.timestamp:
                     row[i] = 0
 
         # add new cells in bomb's range
         for bomb in bombs:
-            player:Player = [player for player in games.map_info.players if player.id == bomb.playerId][0]
-            explosions = expand_by_lines_plus_self((bomb.col, bomb.row), player.power, games.map_info.size)
+            explosions = expand_by_lines_plus_self((bomb.col, bomb.row), bomb.power, games.map_info.size)
             for col, row in explosions:
-                self.data[row][col] = self.timestamp + bomb.remainTime
+                self.data[row][col] = bomb.createdAt
 
 # keep the state throughout the game
 global explosions; explosions = None
@@ -101,19 +101,15 @@ SAFE_ROAD = [
 
 
 def plant_bomb(pos: tuple, maps, msize: MapSize):
-    bomb_path = [pos]
+    escapable = False
     near_cells = expand_by_lines(pos, 1, msize)
     for x, y in near_cells:
         if maps[y][x] in SAFE_ROAD:
-            bomb_path.append((x, y))
+            escapable = True
             break
-    if len(bomb_path) == 1:  # no near cell is safe, no bomb placed
-        return []
-
-    directions = coordinates_to_directions(bomb_path)
-    moves = [cf.MoveSet.BOMB]
-    moves += [str(x) for x in directions]
-    return moves
+    if not escapable: # no near cell is safe, no bomb placed
+        return None
+    return [cf.MoveSet.BOMB]
 
 
 def find_path_to(maps, pos: tuple, locations, traversable: List, path_limit: int):
@@ -168,10 +164,15 @@ def update_map_with_object(client: CFSocket, explosions: ExplosionMap):
     # override traversable points with explosion, this cells are prediction and can be overlapped with eggs & players
     for row in range(rows):
         for col in range(cols):
-            if 0 < explosions.data[row][col] <= current_time + explosions.COUNTDOWN_DURATION and maps[row][col] in SAFE_ROAD:
-                maps[row][col] = TerrainType.ROAD_WITH_EXPLOSION.value
-            elif explosions.data[row][col] > current_time + explosions.COUNTDOWN_DURATION and maps[row][col] in SAFE_ROAD:
+            if explosions.data[row][col] == 0:
+                continue
+            bomb_created = explosions.data[row][col]
+            if (bomb_created <= current_time <= bomb_created + explosions.CROSSABLE_DURATION
+                and maps[row][col] in SAFE_ROAD):
                 maps[row][col] = TerrainType.ROAD_WITH_COUNTDOWN.value
+            if (bomb_created + explosions.CROSSABLE_DURATION < current_time
+                and maps[row][col] in SAFE_ROAD):
+                maps[row][col] = TerrainType.ROAD_WITH_EXPLOSION.value
 
     # debugging only
     mstr = ',\n'.join([str(row) for row in client.games.map_info.map])
@@ -317,14 +318,14 @@ def get_directions_from_input():
 
 
 ACTION_MAP = [
-    (move_away_from_bomb, 5),
+    (move_away_from_bomb, 7),
     (find_nearest_buff_egg, 9),
     (plant_bomb_near_balk, 9),
     (find_nearest_mystic_egg, 12),
     # try again at longer range
-    (plant_bomb_near_balk, 30),
-    (find_nearest_buff_egg, 30),
-    (plant_bomb_near_GSTegg, 30),
+    (plant_bomb_near_balk, 45),
+    (find_nearest_buff_egg, 45),
+    (plant_bomb_near_GSTegg, 50),
 ]
 
 @measure_time

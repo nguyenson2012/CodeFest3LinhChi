@@ -6,7 +6,9 @@ from config.config import CFConfig as cf, plog
 from core.game_state import GameState, Player
 import threading
 from time import sleep
+from random import randint
 
+TAUNTS = ['t1', 't2', 'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8']
 
 class CFSocket:
     """
@@ -15,7 +17,8 @@ class CFSocket:
 
     def __init__(self, gameid, playerid) -> None:
         self.game_id: str = gameid
-        self.player_id: str = playerid
+        self.player_id_start: str = playerid
+        self.player_id: str = None
 
         self.sio: socketio.Client = socketio.Client()
         self.sio.on('*', self.on_event)
@@ -26,6 +29,8 @@ class CFSocket:
         self.is_startgame: bool = False
         self.is_midgame: bool = False
         self.is_stoptraining: bool = False
+        self.is_moving: bool = False
+        self.moving_count: int = 0
 
         self.lock = threading.Lock()
         self.map_json: dict = None
@@ -35,30 +40,38 @@ class CFSocket:
 
 
     # start connection & wait for event
-    def sio_connect(self):
+    def connect_and_join(self):
         self.sio.connect(cf.Server.URL)
+        retry: int = 0
+        while retry < 10:
+            sleep(0.2)
+            if self.sio.connected:
+                self.join_game()
+                break
+            retry += 1
 
-    # end connection
-    def sio_terminate(self):
+
+    def quite_game(self):
         self.sio.disconnect()
 
-    def is_connected(self) -> bool:
-        return self.sio.connected
 
     # Listeners
     def on_connect(self):
         plog(f'<on_connect> connection established with {cf.Server.URL}')
 
+
     def on_disconnect(self):
         plog(f'<on_disconnect> disconnected from server {cf.Server.URL}')
+
 
     # Join a game
     def join_game(self):
         self.sio.emit(cf.Event.ACT_JOIN, {
             'game_id': self.game_id,
-            'player_id': self.player_id
+            'player_id': self.player_id_start
         })
-        plog(f'<emit> <{cf.Event.ACT_JOIN}> with {self.game_id} & {self.player_id}')
+        plog(f'<emit> <{cf.Event.ACT_JOIN}> with {self.game_id} & {self.player_id_start}')
+
 
     # Move the voi
     def direct_player(self, direct: str):
@@ -66,13 +79,25 @@ class CFSocket:
             1: LEFT 2: RIGHT 3: UP 4: DOWN
             b: bomb x: stop moving 
         '''
+        if self.is_moving or self.moving_count > 0:
+            plog(f'<direct_player> player moving, not sending directions! moving_count: {self.moving_count}')
+            return
+
+        self.moving_count = (
+            direct.count(cf.MoveSet.UP) +
+            direct.count(cf.MoveSet.DOWN) +
+            direct.count(cf.MoveSet.LEFT) +
+            direct.count(cf.MoveSet.RIGHT)
+        )
+
         try:
             self.sio.emit(cf.Event.ACT_DRIVE, {
                 'direction': direct
             })
-            plog(f'<emit> <{cf.Event.ACT_DRIVE}> {self.player_id} with {direct}')
+            plog(f'<emit> <{cf.Event.ACT_DRIVE}> {self.player_id_start} with {direct}')
         except socketio.exceptions.BadNamespaceError as ex:
             plog(f'{__file__} socketio BadNamespaceError: {ex}')
+
 
     # Taunt opponent
     def taunt_player(self, speak: str):
@@ -83,7 +108,7 @@ class CFSocket:
         self.sio.emit(cf.Event.ACT_TAUNT, {
             'command': speak
         })
-        plog(f'<emit> {self.player_id} <{cf.Event.ACT_TAUNT}> with {speak}')
+        plog(f'<emit> {self.player_id_start} <{cf.Event.ACT_TAUNT}> with {speak}')
 
 
     def update_map(self):
@@ -100,9 +125,33 @@ class CFSocket:
         del self.games
         self.games = GameState(data=self.map_json)
 
+        # player and other
         assert len(self.games.map_info.players) == 2
         self.player = [x for x in self.games.map_info.players if x.id == self.player_id][0]
         self.player_other = [x for x in self.games.map_info.players if x.id != self.player_id][0]
+
+        # move sync
+        if self.games.tag == cf.Event.ON_PLAYER_MOVE_START and self.games.player_id == self.player_id:
+            self.is_moving = True
+
+        elif self.games.tag == cf.Event.ON_PLAYER_MOVE_STOP and self.games.player_id == self.player_id:
+            self.moving_count -= 1
+            plog(f'<update_map> moving_count: {self.moving_count}')
+            # player stop without start, due to collison or blocked move
+            if self.is_moving == False:
+                self.moving_count = 0
+                plog(f'<update_map> moving_count reset (collision???): {self.moving_count}')
+            self.is_moving = False
+
+        elif self.games.tag == cf.Event.ON_PLAYER_MOVE_BANNED and self.games.player_id == self.player_id:
+            self.moving_count = 0
+            plog(f'<update_map> moving_count reset (move banned): {self.moving_count}')
+
+        # isolation
+        elif self.games.tag == cf.Event.ON_PLAYER_ISOLATED and self.games.player_id == self.player_id:
+            self.is_moving = False
+            self.moving_count = 0
+            plog(f'<update_map> moving_count reset (prisoned): {self.moving_count}')
 
 
     # catch all
@@ -113,26 +162,17 @@ class CFSocket:
             self.map_json = args[1]
             self.update_map()
             self.lock.release()
-        elif args[0] == cf.Event.ON_JOIN:
-            plog(f'<on_event> {args}')
+            return
+
+        plog(f'<on_event> {args}')
+        if args[0] == cf.Event.ON_JOIN:
             self.is_joined = True
+            if self.player_id == None and self.player_id_start[:11] == args[1]['player_id'][:11]:
+                self.player_id = args[1]['player_id']
+                plog(f'<on_event> {self.player_id_start} joined as {self.player_id}')
         elif args[0] == cf.Event.ON_GAME_TRAINING_STOP:
-            plog(f'<on_event> {args}')
             self.is_stoptraining = True
+        elif args[0] == cf.Event.ON_BOMB_HIT and self.player_other.id in args[1]['hitBomb']:
+            self.taunt_player(TAUNTS[randint(0, len(TAUNTS) - 1)])
         else:
-            plog(f'<on_event> {args}')
-
-
-    # Should only use these functions outside of CFSocket
-    def connect_and_join(self):
-        self.sio_connect()
-        retry: int = 0
-        while retry < 10:
-            sleep(0.2)
-            if self.is_connected():
-                self.join_game()
-                break
-            retry += 1
-
-    def quite_game(self):
-        self.sio_terminate()
+            pass

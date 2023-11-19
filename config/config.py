@@ -16,6 +16,7 @@ class ServerUri:
 class DemoKey:
     LONG_LAPTOP_1020 = 'b1693a74-1e63-4424-8d32-6c45a4b30dfc'
     LONG_PC_1103 = 'cc439bc0-76fe-4006-b2f3-97b04aad5be0'
+    LONG_PC_1117 = '35007977-2739-4e02-8d7b-ff568b2817a8'
     TU_LAPTOP = '55761bcb-e57c-4e73-84ca-545a852b40a4'
 
 class CFGameMode(Enum):
@@ -30,12 +31,12 @@ class CFConfig:
         MODE: Enum = CFGameMode.MODE_TRAINING
         W_WIDTH = 960
         W_HEIGHT = 480
-        TIMEOUT = 400 # miliseconds
+        TIMEOUT = 200 # miliseconds
         IMAGE = './data/3TinElephants.png'
 
     class Server:
         URL: str = ServerUri.URL_LOCAL                           # Change to actual server URL during contest
-        DEMO_KEY: str = DemoKey.LONG_PC_1103                     # Change to actual key during contest
+        DEMO_KEY: str = DemoKey.LONG_PC_1117                     # Change to actual key during contest
         PLAYER_1_ID: str = 'player1-xxx'
         PLAYER_2_ID: str = 'player2-xxx'
 
@@ -50,11 +51,16 @@ class CFConfig:
         ON_UPDATE: str = 'update game'
         ON_BOMB_SHOWN: str = 'show bomb'
         ON_BOMB_EXPLODED: str = 'detonate bomb'
+        ON_BOMB_HIT: str = 'hit bomb'
         ON_MOVING_BANNED: str = 'moving banned'
         ON_GAME_TRAINING_STOP: str = 'stop training'
         # Sub event from 'ticktack player'
         ON_GAME_START: str = 'start-game'
         ON_MID_GAME: str = 'update-data'
+        ON_PLAYER_MOVE_START: str = 'player:start-moving'
+        ON_PLAYER_MOVE_STOP: str = 'player:stop-moving'
+        ON_PLAYER_ISOLATED: str = 'player:be-isolated'
+        ON_PLAYER_MOVE_BANNED: str = 'player:moving-banned'
 
     class MoveSet:
         LEFT: str = '1'
