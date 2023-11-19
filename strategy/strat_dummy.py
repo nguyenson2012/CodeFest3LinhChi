@@ -20,9 +20,9 @@ from core.tools.time_counter import measure_time
 """
 
 class ExplosionMap:
-    EXPLOSION_DURATION = 700
+    EXPLOSION_DURATION = 800
     COUNTDOWN_DURATION = 2000
-    CROSSABLE_DURATION = 600
+    CROSSABLE_DURATION = 1000
 
     def __init__(self, rows: int, cols: int) -> None:
         self.rows = rows
@@ -343,7 +343,6 @@ def get_next_move(client: CFSocket):
 
     explosions.update_new_bomb(client.games)
     update_map_with_object(client, explosions)
-
 
     next_move = None
     for action, steps in ACTION_MAP:

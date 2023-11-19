@@ -83,6 +83,10 @@ class CFSocket:
             plog(f'<direct_player> player moving, not sending directions! moving_count: {self.moving_count}')
             return
 
+        # limit to 4 moves, to better avoiding new bomb
+        if len(direct) > 4:
+            direct = direct[:4]
+
         self.moving_count = (
             direct.count(cf.MoveSet.UP) +
             direct.count(cf.MoveSet.DOWN) +

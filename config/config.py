@@ -31,8 +31,8 @@ class CFConfig:
         MODE: Enum = CFGameMode.MODE_TRAINING
         W_WIDTH = 960
         W_HEIGHT = 480
-        TIMEOUT = 200 # miliseconds
         IMAGE = './data/3TinElephants.png'
+        TIMEOUT = 200 # miliseconds
 
     class Server:
         URL: str = ServerUri.URL_LOCAL                           # Change to actual server URL during contest
