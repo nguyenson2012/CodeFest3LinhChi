@@ -7,7 +7,7 @@ from typing import List
 from config.config import CFConfig as cf, plog
 from connection.sioclient import CFSocket
 from data.map import SpoilType, TerrainType
-from core.game_state import GameState, MapSize, Player
+from core.game_state import GameState, MapSize
 from core.algorithm.common.a_star_search import a_star_search
 from core.tools.converter import coordinates_to_directions
 from core.tools.time_counter import measure_time
@@ -20,9 +20,9 @@ from core.tools.time_counter import measure_time
 """
 
 class ExplosionMap:
-    EXPLOSION_DURATION = 800
+    EXPLOSION_DURATION = 1600
     COUNTDOWN_DURATION = 2000
-    CROSSABLE_DURATION = 1000
+    CROSSABLE_DURATION = 400
 
     def __init__(self, rows: int, cols: int) -> None:
         self.rows = rows

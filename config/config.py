@@ -61,6 +61,7 @@ class CFConfig:
         ON_PLAYER_MOVE_STOP: str = 'player:stop-moving'
         ON_PLAYER_ISOLATED: str = 'player:be-isolated'
         ON_PLAYER_MOVE_BANNED: str = 'player:moving-banned'
+        ON_PLAYER_PRISON_OUT: str ='player:back-to-playground'
 
     class MoveSet:
         LEFT: str = '1'
