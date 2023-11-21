@@ -152,10 +152,10 @@ class CFSocket:
             plog(f'<update_map> moving_count reset (move banned): {self.moving_count}')
 
         # isolation
-        elif self.games.tag == cf.Event.ON_PLAYER_ISOLATED and self.games.player_id == self.player_id:
+        elif self.games.tag in [cf.Event.ON_PLAYER_ISOLATED, cf.Event.ON_PLAYER_PRISON_OUT] and self.games.player_id == self.player_id:
             self.is_moving = False
             self.moving_count = 0
-            plog(f'<update_map> moving_count reset (prisoned): {self.moving_count}')
+            plog(f'<update_map> moving_count reset (prison in/out): {self.moving_count}')
 
 
     # catch all
