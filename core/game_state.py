@@ -59,6 +59,8 @@ class Bomb:
         self.col = data.get("col")
         self.remainTime = data.get("remainTime")
         self.playerId = data.get("playerId")
+        self.power = data.get("power")
+        self.createdAt = data.get("createdAt")
 
 
 class Spoil:
